@@ -60,7 +60,10 @@ def read_fasta(fasta_file: Path) -> str:
     :param fasta_file: (Path) Path to the fasta file.
     :return: (str) Sequence from the genome. 
     """
-    pass
+
+    with fasta_file.open('r') as file:
+        sequence = ''.join(line.strip() for line in file if not line.startswith('>'))
+        return sequence.upper()
 
 
 def find_start(start_regex: Pattern, sequence: str, start: int, stop: int) -> Union[int, None]:
@@ -72,7 +75,10 @@ def find_start(start_regex: Pattern, sequence: str, start: int, stop: int) -> Un
     :param stop: (int) Stop position of the research
     :return: (int) If exist, position of the start codon. Otherwise None. 
     """
-    pass
+    match = start_regex.search(sequence, start, stop)
+    if match:
+        return match.start(0)
+    return None
 
 
 def find_stop(stop_regex: Pattern, sequence: str, start: int) -> Union[int, None]:
@@ -83,7 +89,13 @@ def find_stop(stop_regex: Pattern, sequence: str, start: int) -> Union[int, None
     :param start: (int) Start position of the research
     :return: (int) If exist, position of the stop codon. Otherwise None. 
     """
-    pass
+
+    for match in stop_regex.finditer(sequence, start) : 
+        # voir si codon start est dans le meme cadre de lecture que codon stop 
+        if (match.start() - start) % 3 == 0:
+            return match.start(0)
+    return None
+
 
 
 def has_shine_dalgarno(shine_regex: Pattern, sequence: str, start: int, max_shine_dalgarno_distance: int) -> bool:
@@ -95,7 +107,7 @@ def has_shine_dalgarno(shine_regex: Pattern, sequence: str, start: int, max_shin
     :param max_shine_dalgarno_distance: (int) Maximum distance of the shine dalgarno to the start position
     :return: (boolean) true -> has a shine dalgarno upstream to the gene, false -> no
     """
-    pass
+
 
 
 def predict_genes(sequence: str, start_regex: Pattern, stop_regex: Pattern, shine_regex: Pattern, 
@@ -192,7 +204,32 @@ def main() -> None: # pragma: no cover
     #write_genes_pos(args.predicted_genes_file, probable_genes)
     #write_genes(args.fasta_file, sequence, probable_genes, sequence_rc, probable_genes_comp)
 
+    # 2) find start : 
+    # start_codon_regex = re.compile("ATG")
+    # sequence = "AAATGTTTATGTT"
+    # start_pos = 3
+    # stop_pos = 11
+    # print(find_start(start_codon_regex, sequence, start_pos, stop_pos))  
 
+    # 3) find stop : 
+    # stop_regex = re.compile("TAG")
+    # sequence = "ATGGGCTAGGCTAA" 
+    # start_pos = 1
+    # sequence = Path('../data/listeria.fna')
+    # print(find_stop(stop_regex, sequence, start_pos))
+
+    # 1) read_fasta :
+    sequence = read_fasta(args.genome_file)
+    # print(sequence)
+
+    # 2) find_start et find_stop: 
+    start = find_start(start_regex, sequence, start = 0, stop = len(sequence))
+    stop = find_stop(stop_regex, sequence, start)
+    # print(find_start(start_regex, sequence, start, stop)) 
+    # print(find_stop(stop_regex, sequence, start )) 
+
+    # 3) has_shine_dalgarno
+    
 
 if __name__ == '__main__':
     main()
